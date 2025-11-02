@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RifqyWeather</title>
+  <meta name="description" content="Cuaca 6 hari ke depan + lokasi otomatis & manual – RifqyWeather">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.png" type="image/png">
+  <meta name="theme-color" content="#00ff88">
+
+  <style>
+    :root {
+      --primary: #00ff88;
+      --bg-gradient: linear-gradient(135deg, #74b9ff, #0984e3);
+      --card-bg: rgba(255, 255, 255, 0.15);
+      --text: #ffffff;
+      --text-secondary: #e0e0e0;
+      --error: #ff6b6b;
+      --success: #51cf66;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-gradient: linear-gradient(135deg, #1e3a8a, #1e40af);
+        --card-bg: rgba(0, 0, 0, 0.3);
+        --text: #e0e0e0;
+        --text-secondary: #bbbbbb;
+      }
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px;
+      transition: all 0.3s;
+    }
+
+    .container { max-width: 500px; margin: 0 auto; }
+    .weather-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    h1 { font-size: 28px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .subtitle { font-size: 15px; opacity: 0.9; margin-bottom: 20px; }
+
+    .input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: nowrap;
+    }
+
+    input {
+      flex: 1;
+      padding: 16px;
+      border: none;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      font-size: 16px;
+      min-width: 0;
+    }
+
+    input::placeholder { color: rgba(255,255,255,0.7); }
+
+    button {
+      background: var(--primary);
+      color: #000;
+      border: none;
+      padding: 0 20px;
+      border-radius: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,255,136,0.4); }
+    button:active { transform: scale(0.98); }
+
+    .btn-location {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      width: 100%;
+      margin-top: 8px;
+      font-size: 15px;
+    }
+
+    #error { display: none; background: rgba(255,107,107,0.2); color: var(--error); padding: 16px; border-radius: 16px; margin: 16px 0; border-left: 4px solid var(--error); font-size: 15px; }
+
+    #current-weather { margin-top: 24px; display: none; }
+    .temp { font-size: 64px; font-weight: 700; margin: 8px 0; line-height: 1; }
+    .city { font-size: 20px; font-weight: 600; }
+    .description { text-transform: capitalize; font-size: 18px; opacity: 0.9; margin: 4px 0; }
+
+    .details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 20px;
+      font-size: 15px;
+    }
+
+    .details div { text-align: center; }
+    .details strong { display: block; font-size: 13px; opacity: 0.8; margin-bottom: 4px; }
+
+    #forecast { margin-top: 32px; display: none; }
+    #forecast h3 { font-size: 16px; margin-bottom: 16px; opacity: 0.9; }
+
+    .forecast-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    @media (min-width: 640px) {
+      .forecast-grid { grid-template-columns: repeat(6, 1fr); }
+    }
+
+    .forecast-day {
+      background: rgba(255,255,255,0.1);
+      padding: 14px 8px;
+      border-radius: 16px;
+      text-align: center;
+      font-size: 13px;
+      backdrop-filter: blur(5px);
+    }
+
+    .forecast-day img { width: 36px; height: 36px; margin: 6px auto; }
+    .forecast-day strong { font-size: 15px; }
+
+    .ai-tip {
+      margin-top: 24px;
+      padding: 16px;
+      background: rgba(0,255,136,0.15);
+      border-radius: 16px;
+      border-left: 4px solid var(--primary);
+      font-size: 15px;
+      display: none;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 32px;
+      font-size: 13px;
+      opacity: 0.8;
+    }
+
+    @media (max-width: 480px) {
+      .weather-card { padding: 20px; }
+      h1 { font-size: 24px; }
+      .temp { font-size: 56px; }
+      .input-group { flex-direction: column; }
+      button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="weather-card">
+      <h1>RifqyWeather</h1>
+      <p class="subtitle">Cuaca Hari Ini – Otomatis Lokasi!</p>
+      
+      <div class="input-group">
+        <input type="text" id="city-input" placeholder="Ketik kota (contoh: Bandung)" value="Jakarta">
+        <button onclick="searchCity()">Cek</button>
+      </div>
+      <button class="btn-location" onclick="getLocation()">
+        Gunakan Lokasi Saya
+      </button>
+
+      <div id="error"></div>
+
+      <div id="current-weather">
+        <div class="temp" id="temp"></div>
+        <div class="city" id="city"></div>
+        <div class="description" id="description"></div>
+        <div class="details">
+          <div><strong>Kelembaban</strong><span id="humidity"></span></div>
+          <div><strong>Angin</strong><span id="wind"></span></div>
+        </div>
+      </div>
+
+      <div id="forecast">
+        <h3>Ramalan 6 Hari</h3>
+        <div class="forecast-grid" id="forecast-grid"></div>
+      </div>
+
+      <div id="ai-tip" class="ai-tip"></div>
+    </div>
+
+    <footer>© 2025 RifqyWeather</footer>
+  </div>
+
+  <script>
+    const API_KEY = 'af0b633a8f39d798b8de6aba90fca5d1';
+    const API_URL = 'https://api.openweathermap.org/data/2.5';
+
+    function showError(msg) {
+      const el = document.getElementById('error');
+      el.innerText = msg;
+      el.style.display = msg ? 'block' : 'none';
+    }
+
+    function searchCity() {
+      const city = document.getElementById('city-input').value.trim();
+      if (!city) {
+        showError('Masukkan nama kota!');
+        return;
+      }
+      getWeatherByCity(city);
+    }
+
+    async function getWeatherByCity(city) {
+      showError('');
+      try {
+        const res = await fetch(`${API_URL}/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric&lang=id`);
+        const data = await res.json();
+        if (data.cod !== 200) throw new Error(data.message || 'Kota tidak ditemukan');
+        displayCurrent(data);
+        getForecast(data.coord.lat, data.coord.lon);
+        getAITip(data.weather[0].description, data.main.temp);
+      } catch (err) {
+        showError(`Error: ${err.message}`);
+      }
+    }
+
+    async function getForecast(lat, lon) {
+      try {
+        const res = await fetch(`${API_URL}/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=id`);
+        const data = await res.json();
+        displayForecast(data.list);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function displayCurrent(data) {
+      document.getElementById('current-weather').style.display = 'block';
+      document.getElementById('temp').innerText = Math.round(data.main.temp) + '°C';
+      document.getElementById('city').innerText = data.name;
+      document.getElementById('description').innerText = data.weather[0].description;
+      document.getElementById('humidity').innerText = data.main.humidity + '%';
+      document.getElementById('wind').innerText = data.wind.speed + ' m/s';
+    }
+
+    function displayForecast(list) {
+      const grid = document.getElementById('forecast-grid');
+      const forecastEl = document.getElementById('forecast');
+      grid.innerHTML = '';
+      forecastEl.style.display = 'block';
+
+      const daily = {};
+      list.forEach(item => {
+        const date = new Date(item.dt * 1000);
+        const dayKey = date.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' });
+        if (!daily[dayKey]) {
+          daily[dayKey] = { temps: [], icon: item.weather[0].icon, date };
+        }
+        daily[dayKey].temps.push(item.main.temp);
+      });
+
+      Object.values(daily).slice(1, 7).forEach(day => {
+        const avg = Math.round(day.temps.reduce((a,b) => a+b) / day.temps.length);
+        const dateStr = day.date.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' });
+        grid.innerHTML += `
+          <div class="forecast-day">
+            <div>${dateStr}</div>
+            <img src="https://openweathermap.org/img/wn/${day.icon}.png" alt="icon">
+            <strong>${avg}°C</strong>
+          </div>
+        `;
+      });
+    }
+
+    function getAITip(weather, temp) {
+      let tip = '';
+      if (temp > 30) tip = 'Cuaca panas! Pakai topi, sunscreen, & minum air banyak.';
+      else if (temp < 20) tip = 'Dingin nih, pakai jaket tebal & syal.';
+      else if (weather.includes('hujan')) tip = 'Hujan deras? Bawa payung & jas hujan!';
+      else if (weather.includes('cerah')) tip = 'Cuaca cerah, cocok jalan-jalan!';
+      else tip = 'Siap-siap hari ini! RifqyWeather selalu update.';
+
+      const el = document.getElementById('ai-tip');
+      el.innerHTML = `<strong>AI Tip:</strong> ${tip}`;
+      el.style.display = 'block';
+    }
+
+    function getLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+          getWeatherByCoords(pos.coords.latitude, pos.coords.longitude);
+        }, () => {
+          showError('Izinkan akses lokasi untuk fitur ini!');
+        });
+      } else {
+        showError('Browser tidak mendukung geolocation.');
+      }
+    }
+
+    async function getWeatherByCoords(lat, lon) {
+      try {
+        const res = await fetch(`${API_URL}/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=id`);
+        const data = await res.json();
+        document.getElementById('city-input').value = data.name;
+        displayCurrent(data);
+        getForecast(lat, lon);
+        getAITip(data.weather[0].description, data.main.temp);
+      } catch (err) {
+        showError('Gagal ambil lokasi.');
+      }
+    }
+
+    // Auto load Jakarta
+    window.onload = () => getWeatherByCity('Jakarta');
+
+    // Enter key di input
+    document.getElementById('city-input').addEventListener('keypress', e => {
+      if (e.key === 'Enter') searchCity();
+    });
+  </script>
+</body>
+</html>
