@@ -16,9 +16,7 @@
 | **Cari Kota Manual** | Ketik nama kota → langsung muncul |
 | **Lokasi Otomatis** | Pakai GPS HP/PC |
 | **AI Tip Pintar** | Saran sesuai cuaca (panas, hujan, dll) |
-| **PWA (Installable)** | Bisa dipasang di HP seperti app |
 | **Dark/Light Mode** | Otomatis ikut tema HP |
-| **100% Gratis & Open Source** | Gunakan, modifikasi, bagikan! |
 
 ---
 
